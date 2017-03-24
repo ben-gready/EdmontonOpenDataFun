@@ -10,11 +10,7 @@ library(RSocrata)
 library(reshape2)
 library(tidyr)
 library(DT)
-library(devtools)
-#dev_mode()
 library(networkD3)
-#dev_mode()
-#library(rJava)
 
 
 source('./WranglingFunctions.R')
@@ -47,19 +43,19 @@ generate_cluster_tree <- function(data){
 
 sidebar <- dashboardSidebar(
   sidebarMenu(
-    sliderInput("target_links_max", "Max Targets", value = 2, min = 1,
+    sliderInput("target_links_max", "Max Targets", value = 3, min = 1,
                 max = 5, step = 1),
     selectizeInput(inputId = "distance_type",
-                   choices = c("occupation", "ownership_residence_time", "age_gender"),
+                   choices = c("age_gender","occupation", "ownership_residence_time"),
                    multiple = FALSE,
                    label = "Similarity Based Upon",
-                   selected = c("occupation")),
+                   selected = c("age_gender")),
     selectizeInput(inputId = "wards",
                    choices = paste("WARD", 1:12),
                    multiple = TRUE,
                    label = "Add/Remove Wards",
                    selected = paste("WARD", c(1,6,8,12))),
-    sliderInput("n_clusters", "Number of Clusters", value = 4, min = 1,
+    sliderInput("n_clusters", "Number of Clusters", value = 3, min = 1,
                 max = 8, step = 1)
   )
 )
@@ -75,7 +71,7 @@ box_tree <- box(width = NULL,
 )
 box_intro <- box(
   title = "Introduction", width = 7, solidHeader = TRUE,
-  "Explore the similarity between Edmonton neighbourhoods! Below is a 'force directed graph' containing neighbourhoods in the wards selected in the sidebar. The graph connects each neighbourhood to its most similar neighbourhoods. You can control the maximum number of connections for each neighbourhood in the sidebar. The Dendrograph tab shows the hierarchy of businesses, determined by a hierarchical clustering algorithm. We can use this tree to create groups of business types that have similar properties, by choosing to 'cut the tree' at a certain point. You can control where to cut the tree by choosing the number of groups in the sidebar. Colours in the visualizations correspond to the groupings based upon the selected number of clusters. In the sidebar you may control the 'distance metric source'."
+  "Explore the similarity between Edmonton neighbourhoods! Below is a 'force directed graph' containing neighbourhoods in the wards selected in the sidebar. The graph connects each neighbourhood to their most similar neighbours, based upon the type of data selected in the sidebar. You can control the maximum number of connections for each neighbourhood in the sidebar. The Dendrograph tab shows the hierarchy of businesses, determined by a hierarchical clustering algorithm. We can use this tree to create groups of business types that have similar properties, by choosing to 'cut the tree' at a certain point. You can control where to cut the tree by choosing the number of groups in the sidebar. Colours in the visualizations correspond to the groupings based upon the selected number of clusters. The data tab displays the attributes that are used to create the network and dendrograph visuals; different sources of underlying data may be chosen in the sidebar. Code for this application is availble at: https://github.com/ben-gready/EdmontonOpenDataFun/tree/master/NeighbourhoodSimilarity"
 )
 
 box_dt <- box(
@@ -127,9 +123,9 @@ server <- function(input, output) {
     # subset wards:
     wards <- get_wards()
     data_subset <- data[ward %in% wards]
-# 
-#     data_list <- get_data()
-#     data <- data_list$data
+    # 
+    #     data_list <- get_data()
+    #     data <- data_list$data
     tree <- generate_cluster_tree(data_subset)
     n_clusters <- get_n_clusters()
     
@@ -165,7 +161,7 @@ server <- function(input, output) {
       setkey(nodes, NUMBER)
       
       links_cropped <- data.frame(links[!is.na(TARGET) & ORDER <= max_links, list(SOURCE, TARGET, DISTANCE)])
-
+      
       nodes <- data.frame(nodes)
     })
     
@@ -178,7 +174,7 @@ server <- function(input, output) {
                  zoom = TRUE, opacity = 0.8, opacityNoHover = 0.6, bounded = FALSE,
                  linkDistance = networkD3::JS("function(d) { return 10*d.value; }")#, # Function to determine distance between any two nodes, uses variables already defined in forceNetwork function (not variables from a data frame)
                  #linkWidth = networkD3::JS("function(d) { return 25 * d.value; }")# Function to determine link/edge thickness, uses variables already defined in forceNetwork function (not variables from a data frame)
-                 )
+    )
   })
   
 }
